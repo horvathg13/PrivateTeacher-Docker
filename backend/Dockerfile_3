@@ -1,0 +1,52 @@
+# use PHP 8.2
+FROM php:8.2-apache
+#ENV COMPOSER_ALLOW_SUPERUSER=1
+ARG WWWGROUP
+ARG POSTGRES_VERSION=17
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+ENV SUPERVISOR_PHP_USER="sail"
+ENV SUPERVISOR_PHP_COMMAND="php-fpm -F -O"
+
+RUN apt-get update -y && apt-get install -y openssl zip unzip git supervisor
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN apt-get update && apt-get install -y libpq-dev
+RUN docker-php-ext-install pdo pdo_pgsql
+RUN docker-php-ext-install opcache
+RUN apt-get clean \
+&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN a2enmod rewrite
+
+
+# Add the user UID:1000, GID:1000, home at /app
+RUN groupadd -r app -g 1000 && useradd -u 1000 -r -g app -m -d /app -s /sbin/nologin -c "App user" app && \
+    chmod 755 /var/www/html
+
+RUN php -r "readfile('http://getcomposer.org/installer');" | php -- --install-dir=/usr/bin/ --filename=composer
+
+#upload
+RUN echo "file_uploads = On\n" \
+         "memory_limit = 500M\n" \
+         "upload_max_filesize = 500M\n" \
+         "post_max_size = 500M\n" \
+         "max_execution_time = 600\n" \
+         > /usr/local/etc/php/conf.d/uploads.ini
+
+RUN git clone https://github.com/horvathg13/PrivateTeacher_Backend.git  /var/www/html
+
+
+RUN mkdir -p /var/www/html/storage/logs /var/www/html/bootstrap/cache \
+    && touch /var/www/html/storage/logs/laravel.log \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+WORKDIR /var/www/html
+
+COPY start_container_apache /usr/local/bin/start_container_apache
+COPY apache/default.conf /etc/apache2/sites-enabled/000-default.conf
+COPY php.ini /usr/local/etc/php/php.ini
+
+ENTRYPOINT ["start_container_apache"]
+
+EXPOSE 80/tcp
+

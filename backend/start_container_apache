@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+echo "teszt"
+composer install
+php artisan migrate --seed
+php artisan key:generate
+php artisan config:clear
+php artisan config:cache
+echo "Running the scheduler..."
+
+php artisan schedule:run >> /dev/null 2>&1 &
+exec /usr/sbin/apache2ctl -D FOREGROUND
