@@ -4,17 +4,17 @@ services:
             context: backend
             dockerfile: Dockerfile_3
             args:
-                WWWGROUP: '${WWWGROUP}'
+                WWWGROUP: '1000'
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
-            - '${APP_PORT:-80}:80'
+            - '80:80'
         environment:
-            WWWUSER: '${WWWUSER}'
+            WWWUSER: '1000'
             LARAVEL_SAIL: 1
-            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
-            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
-            IGNITION_LOCAL_SITES_PATH: '${PWD}'
+            XDEBUG_MODE: 'off'
+            XDEBUG_CONFIG: 'client_host=host.docker.internal'
+            IGNITION_LOCAL_SITES_PATH: '/PrivateTeacher-Docker'
         networks:
             - sail
         depends_on:
@@ -24,10 +24,10 @@ services:
         ports:
             - '5432:5432'
         environment:
-            PGPASSWORD: '${DB_PASSWORD}'
-            POSTGRES_DB: '${DB_DATABASE}'
-            POSTGRES_USER: '${DB_USERNAME}'
-            POSTGRES_PASSWORD: '${DB_PASSWORD}'
+            PGPASSWORD: 'password'
+            POSTGRES_DB: 'postgres'
+            POSTGRES_USER: 'postgres'
+            POSTGRES_PASSWORD: 'password'
         volumes:
             - 'sail-pgsql:/var/lib/postgresql/data'
             - './backend/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
@@ -39,9 +39,9 @@ services:
                 - pg_isready
                 - '-q'
                 - '-d'
-                - '${DB_DATABASE}'
+                - 'postgres'
                 - '-U'
-                - '${DB_USERNAME}'
+                - 'postgres'
             retries: 30
             timeout: 5s
     frontend:
